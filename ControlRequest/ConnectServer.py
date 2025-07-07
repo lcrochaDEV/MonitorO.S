@@ -1,6 +1,5 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
-
 class ConnectionManager:
     
     def __init__(self):
