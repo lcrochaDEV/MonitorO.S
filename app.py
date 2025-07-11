@@ -1,6 +1,6 @@
 from fastapi import FastAPI, WebSocket
 from fastapi.responses import HTMLResponse
-from ControlRequest.ClassRequest import Rotas
+from ControWebsocket.ClassWebsocket import RotasWebsocket
 from pydantic import BaseModel
 
 app = FastAPI()
@@ -18,7 +18,7 @@ async def get():
 
 @app.websocket("/ws/{client_id}")
 async def websocketServer(websocket:WebSocket, client_id: int):
-    return await Rotas.websocket_endpoint(websocket, client_id)
+    return await RotasWebsocket.websocket_endpoint(websocket, client_id)
 
 html = """
 <!DOCTYPE html>
@@ -63,7 +63,7 @@ async def get():
 
 @app.websocket("/raspberry/{client_id}")
 async def websocketServer(websocket:WebSocket, client_id: int):
-    return await Rotas.raspberry(websocket, client_id)
+    return await RotasWebsocket.raspberry(websocket, client_id)
 
 raspberry = """
 <!DOCTYPE html>

@@ -1,9 +1,9 @@
 from fastapi import WebSocketDisconnect
-from ControlRequest.ConnectServer import ConnectionManager
+from ControWebsocket.ConnectServer import ConnectionManager
 from  Commands.Commands import Commands
 manager = ConnectionManager()   
 
-class Rotas():
+class RotasWebsocket():
   
     @classmethod
     async def websocket_endpoint(self, websocket, client_id):
@@ -27,6 +27,7 @@ class Rotas():
                 receive_front = await websocket.receive_text()
                 await manager.send_personal_message(f"You wrote: {receive_front}", websocket)
                 #data = Commands.cli(receive_front)
+                Commands.telnetCommands()
                 await manager.broadcast(f"Client #{client_id} says: {receive_front}")
         except WebSocketDisconnect:
             manager.disconnect(websocket)
