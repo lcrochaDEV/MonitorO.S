@@ -16,6 +16,8 @@ def read_root():
 async def get():
     return HTMLResponse(html)
 
+
+# SETOR WEBSOCKET
 @app.websocket("/ws/{client_id}")
 async def websocketServer(websocket:WebSocket, client_id: int):
     return await RotasWebsocket.websocket_endpoint(websocket, client_id)

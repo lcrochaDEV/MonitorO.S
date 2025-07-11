@@ -1,8 +1,11 @@
 import pandas as pd
 import socket
 import json
+import io
 
 # Dados de entrada: Saída do comando 'arp -n -v'
+
+'''
 arp_output = """
 Address              HWtype  HWaddress           Flags Mask          Iface
 192.168.1.4          ether   50:8b:b9:6a:a8:9f   C                   br0
@@ -17,7 +20,9 @@ Address              HWtype  HWaddress           Flags Mask          Iface
 192.168.1.6          ether   38:a5:c9:25:b1:c3   C                   br0
 Entries: 10     Skipped: 0      Found: 10
 """
+'''
 
+'''
 # Dados de entrada: Saída do comando 'cat /tmp/hosts'
 hostname_data_str = """
 192.168.1.240   Google-Nest-Mini.meuintelbras.local Google-Nest-Mini
@@ -31,9 +36,12 @@ hostname_data_str = """
 192.168.1.1     ONT121W.meuintelbras.local ONT121W
 192.168.1.241   S24-FE-de-Lucas.meuintelbras.local S24-FE-de-Lucas
 """
+'''
+def telnetDataFrame(data):
+    print(data)
 
 # --- Início do Processamento ---
-def convertDataframe():
+def convertDataframe(arp_output, hostname_data_str):
     # 1. Parsear a saída do ARP para um DataFrame inicial (df_arp)
     lines_arp = arp_output.strip().split('\n')
     # Ignoramos a linha de cabeçalho e a linha de resumo do ARP
@@ -107,10 +115,49 @@ def convertJson(df_final_table):
     # Adiciona a chave 'img' com valor vazio a cada dicionário na lista
     for item in list_of_dicts:
         item['img'] = ""
+        item['parent'] = []
 
     # Converte a lista de dicionários para uma string JSON
     json_output = json.dumps(list_of_dicts, indent=2, ensure_ascii=False)
 
     # Mostrar o JSON gerado
     print("\n--- JSON da Tabela de Dispositivos de Rede (com 'img' na SAÍDA JSON) ---")
+    print(json_output)
+
+
+def versionDataframe(dataframe=None):
+    data = """
+    Model Number: ONT121W
+    Build Date: Jul 10 2020 11:12:44
+    Firmware Version: 1.0-200710
+    MAC Address: D8:77:8B:A6:91:38
+    SysUpTime: 0 2:51:54
+    HW Serial Number: ITBS8BA69138
+    ManufacturerOUI: D8778B
+    Manufacturer: Realtek Semiconductor Corp.
+    """
+
+    # Use io.StringIO to treat the string as a file
+    data_io = io.StringIO(dataframe)
+
+    # Initialize a dictionary to store the parsed data
+    parsed_data = {}
+
+    # Read line by line and parse
+    for line in data_io:
+        line = line.strip()
+        if line:  # Ensure line is not empty
+            try:
+                key, value = line.split(':', 1) # Split only on the first colon
+                parsed_data[key.strip()] = value.strip()
+            except ValueError:
+                # Handle lines that might not be in key:value format if necessary
+                pass
+
+    # Convert the dictionary to a pandas DataFrame
+    # We create a DataFrame with a single row, as this data represents one system's info
+    df = pd.DataFrame([parsed_data])
+    print(df)
+    # Convert the dictionary to a JSON string
+    json_output = json.dumps(parsed_data, indent=4)
     print(json_output)
