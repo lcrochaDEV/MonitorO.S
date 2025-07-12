@@ -1,6 +1,6 @@
 import asyncio
 import telnetlib3
-from frameData.dataframe import telnetDataFrame, versionDataframe
+from frameData.dataframe import TelnetCommands
 
 async def send_telnet_command(host: str = '192.168.1.1', port: int = 23, user: str = 'admin', password: str = 'intelbras', commands: list = None):
     try:
@@ -14,8 +14,9 @@ async def send_telnet_command(host: str = '192.168.1.1', port: int = 23, user: s
             writer.write(f'{password}\n')
             await writer.drain()
             await asyncio.sleep(0.1)
-        
-          
+
+        # Envia um ou mais comandos de uma lista
+        lista: str = []
         if len(commands) == 1:
             writer.write(f'{commands[0]}\r\n')  # Envia o comando e um newline
             await writer.drain()
@@ -23,24 +24,34 @@ async def send_telnet_command(host: str = '192.168.1.1', port: int = 23, user: s
             # Read response (adjust buffer size as needed)
             response = await reader.read(2048)
             if response != '':
-                #print(f"Received response:\n{response}")
-                versionDataframe(response)          
+                print(f"Received response:\n{response}")
+                #versionDataframe(dataframe=response)      
+                pass    
         else:
             for command in commands:
                 writer.write(f'{command}\r\n')  # Envia o comando e um newline
                 await writer.drain()
                 await asyncio.sleep(0.1)
-                print('mais de um item')
-
+                # Read response (adjust buffer size as needed)
+                response = await reader.read(2048)
+                if response != '':
+                    #print(f"Received response:\n{response}") 
+                    lista.append(response)    
+        
+        commandsTelnet = TelnetCommands(commadsMult=lista)
         writer.close()
         print("Connection closed.")
+        return commandsTelnet.convertDataframe()
     except ConnectionRefusedError:
         print(f"Erro: Conexão recusada pelo host {host}:{port}")
 
     except Exception as e:
         print(f"Ocorreu um erro: {e}")
 
-
+async def asyncFunctin(HOST, PORT, USER, PASSWORD, COMMANDS):
+    return 'oi'
+    asyncio.run(send_telnet_command(HOST, PORT, USER, PASSWORD, COMMANDS))
+'''
 if __name__ == "__main__":
     # Replace with your Telnet server's host and port
     HOST = '192.168.1.1'
@@ -48,11 +59,13 @@ if __name__ == "__main__":
     USER = 'admin'
     PASSWORD = 'intelbras'
     COMMANDS = [
-        "show system version",
+        "arp -n -v",
+        "cat /tmp/hosts",
     ]
 
     asyncio.run(send_telnet_command(HOST, PORT, USER, PASSWORD, COMMANDS))
 
+'''
 
 # "show system version",
 # "cat /tmp/hosts",

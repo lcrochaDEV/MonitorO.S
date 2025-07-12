@@ -1,5 +1,5 @@
 from fastapi import WebSocketDisconnect
-from ControWebsocket.ConnectServer import ConnectionManager
+from ControlWebsocket.ConnectServer import ConnectionManager
 from  Commands.Commands import Commands
 manager = ConnectionManager()   
 
