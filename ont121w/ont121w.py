@@ -42,7 +42,7 @@ class Comands_Sends:
     def verificalista(self, lista):
         commandsTelnet = TelnetCommands(commandUni=len(lista) == 1 and lista or None, commadsMult=len(lista) > 1 and lista or None)
         if len(lista) == 1:
-            return commandsTelnet.dataframe_version() 
+            return commandsTelnet.dataframe_version()
         elif len(lista) > 1:
             return commandsTelnet.convertDataframe()
 

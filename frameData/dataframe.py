@@ -132,16 +132,15 @@ class TelnetCommands:
         #df_merged['Local'] = df_merged['Address'].apply(lambda x: x.startswith('192.168.1.'))
         df_merged['Local'] = df_merged['Address'].apply(lambda x: x.startswith(ip[:-1]))
 
-        print("Tentando resolver nomes de host para a coluna 'Hostname'. Isso pode levar alguns segundos, por favor, aguarde...\n")
+        #print("Tentando resolver nomes de host para a coluna 'Hostname'. Isso pode levar alguns segundos, por favor, aguarde...\n")
         df_merged['Full Hostname (FQDN)'] = df_merged['Address'].apply(self.get_hostname)
 
         # 7. Selecionar e reordenar as colunas finais para a tabela
         df_final_table = df_merged[['id', 'Address', 'HWaddress', 'Gateway', 'Local', 'Short Hostname', 'Full Hostname (FQDN)']].copy()
 
         #print("\n--- New Hosts Table ---")
-        jsonformomat = self.convertJson(df_final_table) 
-        return jsonformomat  
-
+        jsonformomat = self.convertJson(df_final_table)
+        return jsonformomat
 
     def get_hostname(self, ip_address):
         """Tenta obter o nome do host para um IP, com tratamento de erros."""
@@ -157,15 +156,14 @@ class TelnetCommands:
             return f"Erro: {e}" # Captura qualquer outro erro inesperado.
 
     def convertJson(self, df_final_table):
-        df_final_table['im'] = ""
+        df_final_table['img'] = ""
         df_final_table['parent'] = [[] for _ in range(len(df_final_table))]
 
-        # Convertendo o DataFrame atualizado para JSON
-        json_output = df_final_table.to_json(orient='records', indent=4)
-        print(json_output)   
-        return json.loads(json_output)
-    
-        # Convert DataFrame to JSON
+        json_output = df_final_table.to_json(orient='records')
+        return json.loads(json_output)  
+
+
+    # Convert DataFrame to JSON
     def dataframe_version(self):
         data = """
             login: admin
@@ -213,7 +211,6 @@ class TelnetCommands:
         # Para dados como este, onde há apenas uma "entrada" (um conjunto de características de um dispositivo),
         # o ideal é criar um DataFrame com uma única linha.
         df = pd.DataFrame([parsed_data])
-                # Convert the dictionary to a JSON string
+        # Convert the dictionary to a JSON string
         json_output = json.dumps(parsed_data, indent=4)
-        print(json_output)
         return json.loads(json_output)

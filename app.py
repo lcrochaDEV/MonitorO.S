@@ -32,7 +32,7 @@ class Itens(BaseModel):
 def read_root():
     return {"Hello": "World"}
 
-@app.get("/ont121w")
+@app.get("/gw/ont121w")
 def methodGet(itens: Itens):
    return Rotas.methodGet(itens)
 
