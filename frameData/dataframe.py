@@ -4,10 +4,9 @@ import json
 import io
 
 class TelnetCommands:
-    def __init__(self, commandUni: str = None, commadsMult: list = None):  # O que cada carro terá
+    def __init__(self, commandUni: list = None, commadsMult: list = None):  # O que cada carro terá
         self.commandUni = commandUni
         self.commadsMult = commadsMult 
-        
     def dataFrame_arp(self):
         # Copie e cole a saída do comando arp aqui
         arp_output = """
@@ -139,8 +138,10 @@ class TelnetCommands:
         # 7. Selecionar e reordenar as colunas finais para a tabela
         df_final_table = df_merged[['id', 'Address', 'HWaddress', 'Gateway', 'Local', 'Short Hostname', 'Full Hostname (FQDN)']].copy()
 
-        print("\n--- New Hosts Table ---")
-        self.convertJson(df_final_table)
+        #print("\n--- New Hosts Table ---")
+        jsonformomat = self.convertJson(df_final_table) 
+        return jsonformomat  
+
 
     def get_hostname(self, ip_address):
         """Tenta obter o nome do host para um IP, com tratamento de erros."""
@@ -156,54 +157,63 @@ class TelnetCommands:
             return f"Erro: {e}" # Captura qualquer outro erro inesperado.
 
     def convertJson(self, df_final_table):
-        # Converte o DataFrame para uma lista de dicionários
-        list_of_dicts = df_final_table.to_dict(orient='records')
+        df_final_table['im'] = ""
+        df_final_table['parent'] = [[] for _ in range(len(df_final_table))]
 
-        # Adiciona a chave 'img' com valor vazio a cada dicionário na lista
-        for item in list_of_dicts:
-            item['img'] = ""
-            item['parent'] = []
-
-        # Converte a lista de dicionários para uma string JSON
-        json_output = json.dumps(list_of_dicts, indent=2, ensure_ascii=False)
-
-        # Mostrar o JSON gerado
-        print("\n--- JSON da Tabela de Dispositivos de Rede (com 'img' na SAÍDA JSON) ---")
-        print(json_output)
-
-    def versionDataframe(self, dataframe=None):
+        # Convertendo o DataFrame atualizado para JSON
+        json_output = df_final_table.to_json(orient='records', indent=4)
+        print(json_output)   
+        return json.loads(json_output)
+    
+        # Convert DataFrame to JSON
+    def dataframe_version(self):
         data = """
-        Model Number: ONT121W
-        Build Date: Jul 10 2020 11:12:44
-        Firmware Version: 1.0-200710
-        MAC Address: D8:77:8B:A6:91:38
-        SysUpTime: 0 2:51:54
-        HW Serial Number: ITBS8BA69138
-        ManufacturerOUI: D8778B
-        Manufacturer: Realtek Semiconductor Corp.
+            login: admin
+            Password: 
+
+
+            BusyBox v1.12.4 (2020-07-10 11:12:47 CST) built-in shell (ash)
+            Enter 'help' for a list of built-in commands.
+
+            # show system version
+
+
+            Model Number: ONT121W
+            Build Date: Jul 10 2020 11:12:44
+            Firmware Version: 1.0-200710
+            MAC Address: D8:77:8B:A6:91:38
+            SysUpTime: 0 2:51:54
+            HW Serial Number: ITBS8BA69138
+            ManufacturerOUI: D8778B
+            Manufacturer: Realtek Semiconductor Corp.
         """
 
-        # Use io.StringIO to treat the string as a file
-        data_io = io.StringIO(dataframe)
+        # 1. Isolar os dados relevantes
+        # Encontra o índice da linha que contém '# show system version'
+        lines = self.commandUni[0].strip().split('\n')
+        start_parsing = False
+        data_lines = []
 
-        # Initialize a dictionary to store the parsed data
+        for line in lines:
+            if '# show system version' in line:
+                start_parsing = True
+                continue # Pula a linha do comando em si
+            
+            if start_parsing and line.strip() != '': # Começa a coletar linhas não vazias após o comando
+                data_lines.append(line.strip())
+
+        # 2. Parsear cada linha em chave-valor
         parsed_data = {}
+        for line in data_lines:
+            if ':' in line:
+                key, value = line.split(':', 1) # Divide apenas no primeiro ':' para preservar valores com ':'
+                parsed_data[key.strip()] = value.strip()
 
-        # Read line by line and parse
-        for line in data_io:
-            line = line.strip()
-            if line:  # Ensure line is not empty
-                try:
-                    key, value = line.split(':', 1) # Split only on the first colon
-                    parsed_data[key.strip()] = value.strip()
-                except ValueError:
-                    # Handle lines that might not be in key:value format if necessary
-                    pass
-
-        # Convert the dictionary to a pandas DataFrame
-        # We create a DataFrame with a single row, as this data represents one system's info
+        # 3. Criar o DataFrame
+        # Para dados como este, onde há apenas uma "entrada" (um conjunto de características de um dispositivo),
+        # o ideal é criar um DataFrame com uma única linha.
         df = pd.DataFrame([parsed_data])
-        print(df)
-        # Convert the dictionary to a JSON string
+                # Convert the dictionary to a JSON string
         json_output = json.dumps(parsed_data, indent=4)
-        return json_output
+        print(json_output)
+        return json.loads(json_output)

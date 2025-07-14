@@ -1,11 +1,17 @@
-from ont121w.ont121w import asyncFunctin
+from Async.ClassAsync import AssyncExec
+from ont121w.ont121w import Comands_Sends
 
 class Rotas:
 
     @classmethod
     def methodGet(self, itens: list):
         try:
-            return asyncFunctin(itens.host, itens.port, itens.user, itens.password, itens.commands)
+            return Comands_Sends.asyncFunctin(itens.host, itens.port, itens.user, itens.password, itens.commands)
+            #START CLIENT
+            return AssyncExec.asyncAction(
+              Comands_Sends.send_telnet_command(itens.host, itens.port, itens.user, itens.password, itens.commands),
+            )
+
         except:
             return 'Dado não encontrado.'
 

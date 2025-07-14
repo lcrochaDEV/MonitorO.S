@@ -2,32 +2,24 @@ import asyncio
 import telnetlib3
 from frameData.dataframe import TelnetCommands
 
-async def send_telnet_command(host: str = '192.168.1.1', port: int = 23, user: str = 'admin', password: str = 'intelbras', commands: list = None):
-    try:
-        reader, writer = await telnetlib3.open_connection(host, port)
-        print(f"Connected to {host}:{port}")
 
-        if user and password:
-            writer.write(f'{user}\n')
-            await writer.drain()
-            await asyncio.sleep(0.1)
-            writer.write(f'{password}\n')
-            await writer.drain()
-            await asyncio.sleep(0.1)
+class Comands_Sends:
+    @classmethod
+    async def send_telnet_command(self, host: str = '192.168.1.1', port: int = 23, user: str = 'admin', password: str = 'intelbras', commands: list = None):
+        try:
+            reader, writer = await telnetlib3.open_connection(host, port)
+            print(f"Connected to {host}:{port}")
 
-        # Envia um ou mais comandos de uma lista
-        lista: str = []
-        if len(commands) == 1:
-            writer.write(f'{commands[0]}\r\n')  # Envia o comando e um newline
-            await writer.drain()
-            await asyncio.sleep(0.1)
-            # Read response (adjust buffer size as needed)
-            response = await reader.read(2048)
-            if response != '':
-                print(f"Received response:\n{response}")
-                #versionDataframe(dataframe=response)      
-                pass    
-        else:
+            if user and password:
+                writer.write(f'{user}\n')
+                await writer.drain()
+                await asyncio.sleep(0.1)
+                writer.write(f'{password}\n')
+                await writer.drain()
+                await asyncio.sleep(0.1)
+
+            # Envia um ou mais comandos de uma lista
+            lista: list = []
             for command in commands:
                 writer.write(f'{command}\r\n')  # Envia o comando e um newline
                 await writer.drain()
@@ -36,22 +28,31 @@ async def send_telnet_command(host: str = '192.168.1.1', port: int = 23, user: s
                 response = await reader.read(2048)
                 if response != '':
                     #print(f"Received response:\n{response}") 
-                    lista.append(response)    
-        
-        commandsTelnet = TelnetCommands(commadsMult=lista)
-        writer.close()
-        print("Connection closed.")
-        return commandsTelnet.convertDataframe()
-    except ConnectionRefusedError:
-        print(f"Erro: Conexão recusada pelo host {host}:{port}")
+                    lista.append(response)
+            writer.close()
+            print("Connection closed.")
+            return self.verificalista(lista)
+        except ConnectionRefusedError:
+            print(f"Erro: Conexão recusada pelo host {host}:{port}")
 
-    except Exception as e:
-        print(f"Ocorreu um erro: {e}")
+        except Exception as e:
+            print(f"Ocorreu um erro: {e}")
 
-async def asyncFunctin(HOST, PORT, USER, PASSWORD, COMMANDS):
-    return 'oi'
-    asyncio.run(send_telnet_command(HOST, PORT, USER, PASSWORD, COMMANDS))
-'''
+    @classmethod
+    def verificalista(self, lista):
+        commandsTelnet = TelnetCommands(commandUni=len(lista) == 1 and lista or None, commadsMult=len(lista) > 1 and lista or None)
+        if len(lista) == 1:
+            return commandsTelnet.dataframe_version() 
+        elif len(lista) > 1:
+            return commandsTelnet.convertDataframe()
+
+
+    @classmethod
+    def asyncFunctin(self, HOST, PORT, USER, PASSWORD, COMMANDS):
+        return asyncio.run(self.send_telnet_command(HOST, PORT, USER, PASSWORD, COMMANDS))
+
+
+
 if __name__ == "__main__":
     # Replace with your Telnet server's host and port
     HOST = '192.168.1.1'
@@ -63,9 +64,9 @@ if __name__ == "__main__":
         "cat /tmp/hosts",
     ]
 
-    asyncio.run(send_telnet_command(HOST, PORT, USER, PASSWORD, COMMANDS))
+    #asyncio.run(send_telnet_command(HOST, PORT, USER, PASSWORD, COMMANDS))
 
-'''
+
 
 # "show system version",
 # "cat /tmp/hosts",
