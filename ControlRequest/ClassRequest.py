@@ -4,7 +4,7 @@ from ont121w.ont121w import Comands_Sends
 class Rotas:
 
     @classmethod
-    def methodGet(self, itens: list):
+    def methodPost(self, itens: list):
         try:
             return Comands_Sends.asyncFunctin(itens.host, itens.port, itens.user, itens.password, itens.commands)
             #START CLIENT

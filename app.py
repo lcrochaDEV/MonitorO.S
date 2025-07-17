@@ -32,9 +32,9 @@ class Itens(BaseModel):
 def read_root():
     return {"Hello": "World"}
 
-@app.get("/gw/ont121w")
-def methodGet(itens: Itens):
-   return Rotas.methodGet(itens)
+@app.post("/gw/ont121w")
+def methodPost(itens: Itens):
+   return Rotas.methodPost(itens)
 
 
 # SETOR WEBSOCKET

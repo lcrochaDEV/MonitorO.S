@@ -2,11 +2,17 @@ import pandas as pd
 import socket
 import json
 import io
+import re
 
 class TelnetCommands:
-    def __init__(self, commandUni: list = None, commadsMult: list = None):  # O que cada carro terá
-        self.commandUni = commandUni
-        self.commadsMult = commadsMult 
+    def __init__(self, lista: list):
+        self.lista = lista
+    def dataframe_generics(self):
+            if len(self.lista) == 1:
+                return self.dataframe_version()
+            else:
+                return self.convertDataframe()
+      
     def dataFrame_arp(self):
         # Copie e cole a saída do comando arp aqui
         arp_output = """
@@ -36,7 +42,7 @@ class TelnetCommands:
         """
         # Encontrar o índice da linha que contém os cabeçalhos da tabela ARP
         # Esta linha é identificada por começar com 'Address'
-        lines = self.commadsMult[0].strip().split('\n')
+        lines = self.lista[0].strip().split('\n')
         start_index = -1
         for i, line in enumerate(lines):
             if line.strip().startswith('Address'):
@@ -57,6 +63,7 @@ class TelnetCommands:
             # Cria um novo DataFrame apenas com 'Address' e 'HWaddress'
             df_selected = df[['Address', 'HWaddress']]
             #print("✅ DataFrame criado com sucesso:")
+            #print(df_selected)
             return df_selected
            
         else:
@@ -72,7 +79,6 @@ class TelnetCommands:
             Enter 'help' for a list of built-in commands.
 
             # cat /tmp/hosts
-
             192.168.1.240   Google-Nest-Mini.meuintelbras.local Google-Nest-Mini
             192.168.1.252   Servidor-LNX.meuintelbras.local Servidor-LNX
             192.168.1.6     wlan0.meuintelbras.local wlan0
@@ -86,16 +92,16 @@ class TelnetCommands:
             192.168.1.9     Chromecast.meuintelbras.local Chromecast
             # 
         """
-
+        
         # Encontra o ponto de início dos dados desejados
         start_marker = "cat /tmp/hosts"
-        start_index = self.commadsMult[1].find(start_marker)
+        start_index = self.lista[1].find(start_marker)
 
         # Verifica se o marcador foi encontrado
         if start_index != -1:
             # Extrai a parte relevante da string,
             # descartando tudo antes de "cat /tmp/hosts"
-            relevant_string = self.commadsMult[1][start_index + len(start_marker):].strip()
+            relevant_string = self.lista[1][start_index + len(start_marker):].strip()
 
             # Usa io.StringIO para tratar a string como um objeto tipo arquivo
             data_io = io.StringIO(relevant_string)
@@ -159,9 +165,19 @@ class TelnetCommands:
         df_final_table['img'] = ""
         df_final_table['parent'] = [[] for _ in range(len(df_final_table))]
 
-        json_output = df_final_table.to_json(orient='records')
-        return json.loads(json_output)  
+        # Assuming df_final_table is your DataFrame
+        # 1. Get the current column names
+        original_columns = df_final_table.columns
 
+        # 2. Create new column names by removing spaces
+        new_columns = [col.replace(' ', '') for col in original_columns]
+
+        # 3. Assign the new column names back to the DataFrame
+        df_final_table.columns = new_columns
+
+        json_output = df_final_table.to_json(orient='records')
+        #print(json_output)
+        return json.loads(json_output)  
 
     # Convert DataFrame to JSON
     def dataframe_version(self):
@@ -184,11 +200,12 @@ class TelnetCommands:
             HW Serial Number: ITBS8BA69138
             ManufacturerOUI: D8778B
             Manufacturer: Realtek Semiconductor Corp.
+            #
         """
 
         # 1. Isolar os dados relevantes
         # Encontra o índice da linha que contém '# show system version'
-        lines = self.commandUni[0].strip().split('\n')
+        lines = self.lista[0].strip().split('\n')
         start_parsing = False
         data_lines = []
 
@@ -204,8 +221,16 @@ class TelnetCommands:
         parsed_data = {}
         for line in data_lines:
             if ':' in line:
-                key, value = line.split(':', 1) # Divide apenas no primeiro ':' para preservar valores com ':'
-                parsed_data[key.strip()] = value.strip()
+                # Divide a linha no primeiro ':' para separar a chave do valor
+                # Isso é importante para valores que podem conter ':' (ex: "Build Date: Jul 10 2020 11:12:44")
+                key, value = line.split(':', 1) 
+                
+                # Remove espaços em branco da chave e, em seguida, remove TODOS os espaços
+                # dentro da chave para formatar como "CamelCase" ou "NoSpaces"
+                cleaned_key = key.strip().replace(" ", "") 
+                
+                # Armazena a chave limpa e o valor (com espaços em branco removidos) no dicionário
+                parsed_data[cleaned_key] = value.strip()
 
         # 3. Criar o DataFrame
         # Para dados como este, onde há apenas uma "entrada" (um conjunto de características de um dispositivo),

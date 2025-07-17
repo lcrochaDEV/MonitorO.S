@@ -29,23 +29,19 @@ class Comands_Sends:
                 if response != '':
                     #print(f"Received response:\n{response}") 
                     lista.append(response)
-            writer.close()
-            print("Connection closed.")
-            return self.verificalista(lista)
+            commandsTelnet = TelnetCommands(lista=lista)
+            return commandsTelnet.dataframe_generics()
         except ConnectionRefusedError:
-            print(f"Erro: Conexão recusada pelo host {host}:{port}")
+            #print(f"Erro: Conexão recusada pelo host {host}:{port}")
+            return f"Erro: Conexão recusada pelo host {host}:{port}"
 
         except Exception as e:
-            print(f"Ocorreu um erro: {e}")
-
-    @classmethod
-    def verificalista(self, lista):
-        commandsTelnet = TelnetCommands(commandUni=len(lista) == 1 and lista or None, commadsMult=len(lista) > 1 and lista or None)
-        if len(lista) == 1:
-            return commandsTelnet.dataframe_version()
-        elif len(lista) > 1:
-            return commandsTelnet.convertDataframe()
-
+            #print(f"Ocorreu um erro: {e}")
+            return f"Ocorreu um erro: {e}"
+        finally:
+            writer.close()
+            print("Connection closed.")
+            #return "Connection closed."
 
     @classmethod
     def asyncFunctin(self, HOST, PORT, USER, PASSWORD, COMMANDS):
