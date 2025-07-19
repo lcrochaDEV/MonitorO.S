@@ -3,15 +3,23 @@ import socket
 import json
 import io
 import re
+import time
 
 class TelnetCommands:
-    def __init__(self, lista: list):
+    def __init__(self, lista: list, listDataFrame: list = []):
         self.lista = lista
+        self.listDataFrame = listDataFrame
+        print(len(self.lista))
+        print(len(self.listDataFrame))
+
     def dataframe_generics(self):
-            if len(self.lista) == 1:
-                return self.dataframe_version()
-            else:
-                return self.convertDataframe()
+    
+        return self.dataFrame_arp()
+        if len(self.lista) == 1:
+            return self.dataframe_version()
+        else:
+            #return self.convertDataframe()
+            pass
       
     def dataFrame_arp(self):
         # Copie e cole a saída do comando arp aqui
@@ -40,35 +48,52 @@ class TelnetCommands:
             Entries: 12     Skipped: 0      Found: 12
             #
         """
-        # Encontrar o índice da linha que contém os cabeçalhos da tabela ARP
-        # Esta linha é identificada por começar com 'Address'
-        lines = self.lista[0].strip().split('\n')
+        listas = self.lista[0]
+        match = re.search(r"#\s.+\b", listas).group(0)
+        linhas = listas.strip().split('\n')
         start_index = -1
-        for i, line in enumerate(lines):
-            if line.strip().startswith('Address'):
+        # Itera sobre cada linha do texto para encontrar o início da saída do comando 'arp -n -v'
+        for i, line in enumerate(linhas):
+            if line.strip().startswith(match):
                 start_index = i
                 break
 
         if start_index != -1:
-            # Coletar as linhas da tabela ARP (cabeçalho + dados)
-            # Ignorar a linha de resumo 'Entries: ...'
-            arp_table_lines = lines[start_index:-1] # -1 para remover a última linha de resumo
+            # A linha do cabeçalho da tabela ARP é a próxima linha após o comando 'arp -n -v'
+            header_line = linhas[start_index + 1].strip()
+            data_lines = []
+            # Percorre as linhas a partir de uma posição após o cabeçalho (start_index + 1)
+            for line in linhas[start_index + 2:]:
+                if line.strip().startswith('Entries:'):  # Condição de parada: a linha que resume as entradas
+                    break  # Interrompe o loop quando a linha de resumo é alcançada
+                if not line.strip(): # Pula linhas vazias que podem aparecer
+                    continue
+                data_lines.append(line.strip())  # Adiciona a linha de dados (removendo espaços extras) à lista
 
-            # Juntar as linhas novamente em uma única string
-            arp_table_string = "\n".join(arp_table_lines)
+            full_data_string = header_line + '\n' + '\n'.join(data_lines)
+            df = pd.read_csv(io.StringIO(full_data_string), sep=r'\s+', engine='python')
+     
+            df['Mask'], df['Iface'] = df['Iface'], df['Mask']
+            df['Mask'] = ""
+            # Garante que todas as colunas de string não tenham espaços em branco no início/fim
+            for col in df.columns:
+                if df[col].dtype == 'object':
+                    df[col] = df[col].str.strip()
 
-            # Usar io.StringIO para tratar a string como um arquivo e pd.read_csv para parsear
-            df = pd.read_csv(io.StringIO(arp_table_string), sep=r'\s+', skipfooter=1, engine='python')    
-
-            # Cria um novo DataFrame apenas com 'Address' e 'HWaddress'
-            df_selected = df[['Address', 'HWaddress']]
-            #print("✅ DataFrame criado com sucesso:")
-            #print(df_selected)
-            return df_selected
-           
+            if len(self.lista) == 2:
+                self.listDataFrame.insert(0, df)
+                self.listDataFrame[0] = self.newDataframe_arp()
+            return df
         else:
-            print(f"❌ Não foi possível encontrar a tabela ARP na saída fornecida.")
+            print(f"Nenhuma seção {match} encontrada no texto.")
 
+    def newDataframe_arp(self):
+        # Cria um novo DataFrame apenas com 'Address' e 'HWaddress'
+        df = self.listDataFrame[0][['Address', 'HWaddress']]
+        #print("✅ DataFrame criado com sucesso:")
+        print(df)
+        return df
+'''
     def dataFrame_hosts(self):
         hosts_data = """
             login: admin
@@ -115,7 +140,8 @@ class TelnetCommands:
 
             #print("✅ DataFrame criado com sucesso:")
             #print(df)
-            return df
+            self.lista.insert(1, df)
+            return self.lista[1]
         else:
             print(f"❌ O marcador '{start_marker}' não foi encontrado nos dados da string fornecida.")
 
@@ -239,3 +265,5 @@ class TelnetCommands:
         # Convert the dictionary to a JSON string
         json_output = json.dumps(parsed_data, indent=4)
         return json.loads(json_output)
+
+'''
