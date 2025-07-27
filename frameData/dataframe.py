@@ -3,22 +3,17 @@ import socket
 import json
 import io
 import re
-import time
 
 class TelnetCommands:
     def __init__(self, lista: list, listDataFrame: list = []):
         self.lista = lista
         self.listDataFrame = listDataFrame
-        print(len(self.lista))
-        print(len(self.listDataFrame))
 
     def dataframe_generics(self):
-    
-        return self.dataFrame_arp()
         if len(self.lista) == 1:
             return self.dataframe_version()
         else:
-            #return self.convertDataframe()
+            return self.convertDataframe()
             pass
       
     def dataFrame_arp(self):
@@ -80,9 +75,12 @@ class TelnetCommands:
                 if df[col].dtype == 'object':
                     df[col] = df[col].str.strip()
 
-            if len(self.lista) == 2:
+            #Verifica se exite 2 itens na lista e adiciona na lista listDataFrame na posição 0 um data frame
+            #caso já exista informações na lista ele apenas substitui os dados na posição definida
+            if len(self.lista) == 2:               
                 self.listDataFrame.insert(0, df)
                 self.listDataFrame[0] = self.newDataframe_arp()
+                return self.listDataFrame[0] 
             return df
         else:
             print(f"Nenhuma seção {match} encontrada no texto.")
@@ -90,10 +88,9 @@ class TelnetCommands:
     def newDataframe_arp(self):
         # Cria um novo DataFrame apenas com 'Address' e 'HWaddress'
         df = self.listDataFrame[0][['Address', 'HWaddress']]
-        #print("✅ DataFrame criado com sucesso:")
-        print(df)
+        print("✅ DataFrame criado com sucesso:")
         return df
-'''
+
     def dataFrame_hosts(self):
         hosts_data = """
             login: admin
@@ -138,10 +135,12 @@ class TelnetCommands:
             # Remove qualquer linha onde pelo menos um valor seja NaN
             df = df.dropna()
 
-            #print("✅ DataFrame criado com sucesso:")
-            #print(df)
-            self.lista.insert(1, df)
-            return self.lista[1]
+            #Verifica se exite 2 itens na lista e adiciona na lista listDataFrame na posição 0 um data frame
+            #caso já exista informações na lista ele apenas substitui os dados na posição definida
+            if len(self.lista) == 2:
+                self.listDataFrame.insert(1, df)
+                print("✅ DataFrame criado com sucesso:")
+                return self.listDataFrame[1]
         else:
             print(f"❌ O marcador '{start_marker}' não foi encontrado nos dados da string fornecida.")
 
@@ -266,4 +265,3 @@ class TelnetCommands:
         json_output = json.dumps(parsed_data, indent=4)
         return json.loads(json_output)
 
-'''
